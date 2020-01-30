@@ -39,7 +39,7 @@ def handle_hello():
     return jsonify(response_body), 200
 
 # Todo endpoint!
-@app.route("/todos/<username>", methods=["GET", "POST", "PUT", "DELETE"])
+@app.route("/todos/<username>/", methods=["GET", "POST", "PUT", "DELETE"])
 def handle_todos(username):
     headers = {
         "Content-Type": "application/json"
@@ -98,20 +98,35 @@ def handle_todos(username):
             # user exists, updating whole list...
             # delete current user tasks...
             Todo.query.filter_by(user_username=username).delete()
+            # this jsonifies request.data, returns a list
+            # equivalent to new_tasks = request.json
             new_tasks = json.loads(request.data)
-            
-            for task in new_tasks:
-                # task["user_username"] = username
-                new_task = Todo(task["label"], username)
-                db.session.add(new_task)
 
-            db.session.commit()
-            result = f"A list with {len(new_tasks)} todos was succesfully saved"
-            response_body = {
-                "result": result,
-                "status": "HTTP_200_OK."
-            }
-            status_code = 200
+            # check update request task list is not empty
+            if len(new_tasks) > 0:
+                # task list to update is not empty
+                for task in new_tasks:
+                    # task["user_username"] = username
+                    new_task = Todo(task["label"], username)
+                    db.session.add(new_task)
+
+                db.session.commit()
+                result = f"A list with {len(new_tasks)} todos was succesfully saved"
+                response_body = {
+                    "result": result,
+                    "status": "HTTP_200_OK."
+                }
+                status_code = 200
+
+            else:
+                # task list to update is empty, delete user and create no task...
+                User.query.filter_by(username=username).delete()
+                result = f"User has no tasks left, account was deleted."
+                response_body = {
+                    "result": result,
+                    "status": "HTTP_200_OK."
+                }
+                status_code = 200
 
         else: 
             # user does not exist, this is a no go...
@@ -119,7 +134,7 @@ def handle_todos(username):
                 "status": "HTTP_400_BAD_REQUEST. Cannot update task's list for non existing user..."
             }
             status_code = 400
-    
+
     elif request.method == "DELETE":
         # user wants to delete his list and user registry...
         if len(requesting_user) > 0:
@@ -133,7 +148,7 @@ def handle_todos(username):
                 "status": "HTTP_204_NO_CONTENT. User and tasks deleted."
             }
             status_code = 204
-        
+
         else:
             # user does not exist, this is a no go...
             response_body = {
