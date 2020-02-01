@@ -44,6 +44,7 @@ class UserImage(db.Model):
 
     def serialize(self):
         return {
+            "id": self.id,
             "title": self.title,
             "image_url": self.image_url
         }

@@ -163,6 +163,52 @@ def handle_todos(username):
         headers
     )
 
+@app.route("/images/<username>", methods=["POST", "GET"])
+def handle_user_images(username):
+    """ 
+        GET to receive all user images as a list of objects,
+        POST to create a new user image.
+    """
+    headers = {
+        "Content-Type": "application/json"
+    }
+    if request.method == "GET":
+        # get user images and return them
+        response_body = [
+            {
+                "id": 5,
+                "title": "some image",
+                "image_url": "some/url/"
+            },
+            {
+                "id": 3,
+                "title": "another image",
+                "image_url": "some/other/url"
+            }
+        ]
+        status_code = 200
+
+    elif request.method == "POST":
+        # receive file, secure its name, save it and
+        # create object to store title and image_url
+        response_body = {
+            "result": "Image created, i guess"
+        }
+        status_code = 200
+
+    else:
+        # bad request method...
+        response_body = {
+            "result": "HTTP_400_BAD_REQUEST. This is not a valid method for this endpoint."
+        }
+        status_code = 400
+
+    return make_response(
+        jsonify(response_body),
+        status_code,
+        headers
+    )
+
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
