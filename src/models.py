@@ -6,6 +6,7 @@ class User(db.Model):
     """ todo list user """
     username = db.Column(db.String(30), primary_key=True)
     todos = db.relationship("Todo", back_populates="user")
+    images = db.relationship("UserImage", back_populates="user")
 
     def __init__(self, username):
         self.username = username.strip()
@@ -27,3 +28,22 @@ class Todo(db.Model):
             "label": self.label,
             "done": self.done
         } 
+
+class UserImage(db.Model):
+    """ image uploaded by user """
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(80), nullable=False, unique=True)
+    image_url = db.Column(db.String(500), nullable=False, unique=True)
+    user_username = db.Column(db.String(30), db.ForeignKey("user.username"), nullable=False)
+    user = db.relationship("User", back_populates="images")
+
+    def __init__(self, title, image_url, user_username):
+        self.title = title.strip()
+        self.image_url = image_url.strip()
+        self.user_username = user_username.strip()
+
+    def serialize(self):
+        return {
+            "title": self.title,
+            "image_url": self.image_url
+        }
