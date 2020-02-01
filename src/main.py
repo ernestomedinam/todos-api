@@ -110,23 +110,20 @@ def handle_todos(username):
                     new_task = Todo(task["label"], username)
                     db.session.add(new_task)
 
-                db.session.commit()
                 result = f"A list with {len(new_tasks)} todos was succesfully saved"
-                response_body = {
-                    "result": result,
-                    "status": "HTTP_200_OK."
-                }
-                status_code = 200
 
             else:
                 # task list to update is empty, delete user and create no task...
                 User.query.filter_by(username=username).delete()
+                
                 result = f"User has no tasks left, account was deleted."
-                response_body = {
-                    "result": result,
-                    "status": "HTTP_200_OK."
-                }
-                status_code = 200
+            
+            db.session.commit()
+            response_body = {
+                "result": result,
+                "status": "HTTP_200_OK."
+            }
+            status_code = 200
 
         else: 
             # user does not exist, this is a no go...
