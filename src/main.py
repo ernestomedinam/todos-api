@@ -3,6 +3,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 import os
 import json
+import uuid
 from flask import Flask, request, jsonify, url_for, make_response, send_from_directory
 from flask_migrate import Migrate
 from flask_swagger import swagger
@@ -204,7 +205,10 @@ def handle_user_images(username, id=0):
                 os.mkdir(target)
             image_file = request.files['file']
             filename = secure_filename(image_file.filename)
-            destination = os.path.join(target, filename)
+            extension = filename.rsplit(".", 1)[1]
+            hash_name = uuid.uuid4().hex
+            hashed_filename = ".".join([hash_name, extension])
+            destination = os.path.join(target, hashed_filename)
             image_file.save(destination)
             
             new_image = UserImage(request.form.get("title"), destination, username)
