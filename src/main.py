@@ -47,9 +47,18 @@ def handle_hello():
 # Todo endpoint!
 @app.route("/todos/<username>/", methods=["GET", "POST", "PUT", "DELETE"])
 def handle_todos(username):
+    
     headers = {
         "Content-Type": "application/json"
     }
+    if request.content_type != "application/json":
+        return make_response(
+            jsonify({
+                "result": "this is application/json only endpoint."
+            }),
+            405,
+            headers
+        )
     # check if user exists.
     requesting_user = User.query.filter_by(username=username).all()
     # user is requesting todos or user creation and sample todo.
@@ -120,6 +129,16 @@ def handle_todos(username):
 
             else:
                 # task list to update is empty, delete user and create no task...
+                # and also delete user images...
+                user_images = UserImage.query.filter_by(user_username=username).all()
+                for image in user_images:
+                    url_parts = image.image_url.rsplit("/", 2)
+                    path_filename = "/".join([url_parts[1], url_parts[2]])
+                    if os.path.exists(os.path.join(UPLOAD_FOLDER, path_filename)):
+                        os.remove(os.path.join(UPLOAD_FOLDER, path_filename))
+                        db.session.delete(image)
+                db.session.commit()
+
                 User.query.filter_by(username=username).delete()
                 
                 result = f"User has no tasks left, account was deleted."
@@ -140,11 +159,23 @@ def handle_todos(username):
 
     elif request.method == "DELETE":
         # user wants to delete his list and user registry...
+        # and also his images!!
         if len(requesting_user) > 0:
             # user exists, delete records...
             # delete current user tasks...
+            # delete current user images...
+            user_images = UserImage.query.filter_by(user_username=username).all()
+            for image in user_images:
+                url_parts = image.image_url.rsplit("/", 2)
+                path_filename = "/".join([url_parts[1], url_parts[2]])
+                if os.path.exists(os.path.join(UPLOAD_FOLDER, path_filename)):
+                    os.remove(os.path.join(UPLOAD_FOLDER, path_filename))
+                    db.session.delete(image)
+            db.session.commit()
+
             Todo.query.filter_by(user_username=username).delete()
             User.query.filter_by(username=username).delete()
+            
             db.session.commit()
             response_body = {
                 "result": "ok",
