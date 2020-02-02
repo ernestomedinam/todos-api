@@ -19,6 +19,7 @@ app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER')
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
 UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER')
 MIGRATE = Migrate(app, db)
 db.init_app(app)
@@ -198,34 +199,42 @@ def handle_user_images(username, id=0):
                 status_code = 200
 
         elif request.method == "POST":
-            # receive file, secure its name, save it and
-            # create object to store title and image_url
-            target = os.path.join(UPLOAD_FOLDER, "images")
-            if not os.path.isdir(target):
-                os.mkdir(target)
-            image_file = request.files['file']
-            filename = secure_filename(image_file.filename)
-            extension = filename.rsplit(".", 1)[1]
-            hash_name = uuid.uuid4().hex
-            hashed_filename = ".".join([hash_name, extension])
-            destination = os.path.join(target, hashed_filename)
-            image_file.save(destination)
-            
-            new_image = UserImage(request.form.get("title"), destination, username)
-            db.session.add(new_image)
-            
-            try:
-                db.session.commit()
+            # check if user has less than 5 images stored
+            if len(UserImage.query.filter_by(user_username=username).all()) < 5:
+                # receive file, secure its name, save it and
+                # create object to store title and image_url
+                target = os.path.join(UPLOAD_FOLDER, "images")
+                if not os.path.isdir(target):
+                    os.mkdir(target)
+                image_file = request.files['file']
+                filename = secure_filename(image_file.filename)
+                extension = filename.rsplit(".", 1)[1]
+                hash_name = uuid.uuid4().hex
+                hashed_filename = ".".join([hash_name, extension])
+                destination = os.path.join(target, hashed_filename)
+                image_file.save(destination)
+                
+                new_image = UserImage(request.form.get("title"), destination, username)
+                db.session.add(new_image)
+                
+                try:
+                    db.session.commit()
+                    response_body = {
+                        "result": "HTTP_201_CREATED. image created for user"
+                    }
+                    status_code = 201
+                except IntegrityError:
+                    db.session.rollback()
+                    response_body = {
+                        "result": "HTTP_400_BAD_REQUEST. image with same title exists"
+                    }
+                    status_code = 400
+            else:
+                # user has 5 images uploaded
                 response_body = {
-                    "result": "HTTP_201_CREATED. image created for user"
+                    "result": "HTTP_404_BAD_REQUEST. cannot upload more than five images, please delete one first."
                 }
-                status_code = 201
-            except IntegrityError:
-                db.session.rollback()
-                response_body = {
-                    "result": "HTTP_400_BAD_REQUEST. image with same title exists"
-                }
-                status_code = 400
+                status_code = 404
 
         elif request.method == "DELETE":
             # user wants to delete a certain image, check id
