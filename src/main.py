@@ -186,9 +186,15 @@ def handle_user_images(username, id=0):
             # get user images and return them
             user_images = UserImage.query.filter_by(user_username=username).all()
             response_body = []
-            for image in user_images:
-                response_body.append(image.serialize())
-            status_code = 200
+            if len(user_images) > 0:
+                for image in user_images:
+                    response_body.append(image.serialize())
+                status_code = 200
+            else:
+                response_body = {
+                    "result": "HTTP_200_OK. sorry, user has no images"
+                }
+                status_code = 200
 
         elif request.method == "POST":
             # receive file, secure its name, save it and
