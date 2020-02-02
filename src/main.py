@@ -8,13 +8,17 @@ from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
-from models import db, User, Todo
+from models import db, User, Todo, UserImage
+from werkzeug.utils import secure_filename
+from sqlalchemy.exc import IntegrityError
 #from models import Person
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER')
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER')
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
@@ -163,6 +167,7 @@ def handle_todos(username):
         headers
     )
 
+# user images endpoint
 @app.route("/images/<username>", methods=["POST", "GET"])
 def handle_user_images(username):
     """ 
@@ -172,34 +177,67 @@ def handle_user_images(username):
     headers = {
         "Content-Type": "application/json"
     }
-    if request.method == "GET":
-        # get user images and return them
-        response_body = [
-            {
-                "id": 5,
-                "title": "some image",
-                "image_url": "some/url/"
-            },
-            {
-                "id": 3,
-                "title": "another image",
-                "image_url": "some/other/url"
+    # check if user exists
+    if User.query.filter_by(username=username).first():
+        # user exists
+
+        if request.method == "GET":
+            # get user images and return them
+            user_images = UserImage.query.filter_by(user_username=username).all()
+            response_body = []
+            for image in user_images:
+                response_body.append(image.serialize())
+            # response_body = [
+            #     {
+            #         "id": 5,
+            #         "title": "some image",
+            #         "image_url": "some/url/"
+            #     },
+            #     {
+            #         "id": 3,
+            #         "title": "another image",
+            #         "image_url": "some/other/url"
+            #     }
+            # ]
+            status_code = 200
+
+        elif request.method == "POST":
+            # receive file, secure its name, save it and
+            # create object to store title and image_url
+            target = os.path.join(UPLOAD_FOLDER, "images")
+            if not os.path.isdir(target):
+                os.mkdir(target)
+            image_file = request.files['file']
+            filename = secure_filename(image_file.filename)
+            destination = os.path.join(target, filename)
+            image_file.save(destination)
+            
+            new_image = UserImage(request.form.get("title"), destination, username)
+            db.session.add(new_image)
+            
+            try:
+                db.session.commit()
+                response_body = {
+                    "result": "HTTP_201_CREATED. image created for user"
+                }
+                status_code = 201
+            except IntegrityError:
+                db.session.rollback()
+                response_body = {
+                    "result": "HTTP_400_BAD_REQUEST. image with same title exists"
+                }
+                status_code = 400
+
+        else:
+            # bad request method...
+            response_body = {
+                "result": "HTTP_400_BAD_REQUEST. This is not a valid method for this endpoint."
             }
-        ]
-        status_code = 200
-
-    elif request.method == "POST":
-        # receive file, secure its name, save it and
-        # create object to store title and image_url
-        response_body = {
-            "result": "Image created, i guess"
-        }
-        status_code = 200
-
+            status_code = 400
     else:
-        # bad request method...
+        # user doesn't exist
         response_body = {
-            "result": "HTTP_400_BAD_REQUEST. This is not a valid method for this endpoint."
+            "result": "HTTP_400_BAD_REQUEST. cannot upload image for non existing user..."
         }
         status_code = 400
 
