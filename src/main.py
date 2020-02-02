@@ -168,8 +168,9 @@ def handle_todos(username):
     )
 
 # user images endpoint
-@app.route("/images/<username>", methods=["POST", "GET"])
-def handle_user_images(username):
+@app.route("/todos/<username>/images", methods=["POST", "GET"])
+@app.route("/todos/<username>/images/<int:id>", methods=["DELETE"])
+def handle_user_images(username, id=0):
     """ 
         GET to receive all user images as a list of objects,
         POST to create a new user image.
@@ -187,18 +188,6 @@ def handle_user_images(username):
             response_body = []
             for image in user_images:
                 response_body.append(image.serialize())
-            # response_body = [
-            #     {
-            #         "id": 5,
-            #         "title": "some image",
-            #         "image_url": "some/url/"
-            #     },
-            #     {
-            #         "id": 3,
-            #         "title": "another image",
-            #         "image_url": "some/other/url"
-            #     }
-            # ]
             status_code = 200
 
         elif request.method == "POST":
@@ -228,6 +217,32 @@ def handle_user_images(username):
                 }
                 status_code = 400
 
+        elif request.method == "DELETE":
+            # user wants to delete a certain image, check id
+            if id != 0 and UserImage.query.filter_by(id=id).first():
+                image_to_delete = UserImage.query.filter_by(id=id).first()
+                url_parts = image_to_delete.image_url.rsplit("/", 2)
+                path_filename = "/".join([url_parts[1], url_parts[2]])
+                if os.path.exists(os.path.join(UPLOAD_FOLDER, path_filename)):
+                    os.remove(os.path.join(UPLOAD_FOLDER, path_filename))
+                    db.session.delete(image_to_delete)
+                    db.session.commit()
+                    response_body = {
+                        "result": "HTTP_204_NO_CONTENT. image deleted."
+                    }
+                    status_code = 204
+                else:
+                    response_body = {
+                        "result": "something is very wrong because object with given id exists, but file does not..."
+                    }
+                    status_code = 418
+            else:
+                # image does not exist
+                response_body = {
+                    "result": "HTTP_404_NOT_FOUND. image not found..."
+                }
+                status_code = 404
+
         else:
             # bad request method...
             response_body = {
@@ -237,7 +252,7 @@ def handle_user_images(username):
     else:
         # user doesn't exist
         response_body = {
-            "result": "HTTP_400_BAD_REQUEST. cannot upload image for non existing user..."
+            "result": "HTTP_400_BAD_REQUEST. cannot handle images for non existing user..."
         }
         status_code = 400
 
@@ -247,22 +262,18 @@ def handle_user_images(username):
         headers
     )
 
-# serve images endpoint
+# single user image endpoint
+
+# static image file serving
 @app.route("/src/static/images/<filename>", methods=["GET"])
 def serve_image(filename):
     
     secured_filename = secure_filename(filename)
     image_path = os.path.join("images", secured_filename)
-    print(f"variables: static folder path = {app.static_folder} and  image_path = {image_path}")
-    # path = os.path.join(UPLOAD_FOLDER, "images/")
-    # path2 = "/".join(["images", secured_filename])
-    # print(f"running this one: {secured_filename} on {os.path.join('/static/', path2)}")
-    print(os.path.exists(os.path.join(app.static_folder, image_path)))
+    
     if os.path.exists(os.path.join(app.static_folder, image_path)):
-        print(f"sending from directory... {os.path.join(app.static_folder, image_path)}")
         return send_from_directory(app.static_folder, image_path)
     else:
-        print("got in else...")
         return "HTTP_404_NOT_FOUND"
 
 # this only runs if `$ python src/main.py` is executed
