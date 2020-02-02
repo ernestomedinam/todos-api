@@ -3,7 +3,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 import os
 import json
-from flask import Flask, request, jsonify, url_for, make_response
+from flask import Flask, request, jsonify, url_for, make_response, send_from_directory
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 from sqlalchemy.exc import IntegrityError
 #from models import Person
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static")
 app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -246,6 +246,24 @@ def handle_user_images(username):
         status_code,
         headers
     )
+
+# serve images endpoint
+@app.route("/src/static/images/<filename>", methods=["GET"])
+def serve_image(filename):
+    
+    secured_filename = secure_filename(filename)
+    image_path = os.path.join("images", secured_filename)
+    print(f"variables: static folder path = {app.static_folder} and  image_path = {image_path}")
+    # path = os.path.join(UPLOAD_FOLDER, "images/")
+    # path2 = "/".join(["images", secured_filename])
+    # print(f"running this one: {secured_filename} on {os.path.join('/static/', path2)}")
+    print(os.path.exists(os.path.join(app.static_folder, image_path)))
+    if os.path.exists(os.path.join(app.static_folder, image_path)):
+        print(f"sending from directory... {os.path.join(app.static_folder, image_path)}")
+        return send_from_directory(app.static_folder, image_path)
+    else:
+        print("got in else...")
+        return "HTTP_404_NOT_FOUND"
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
