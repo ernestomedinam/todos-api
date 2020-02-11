@@ -37,6 +37,7 @@ class Ad(db.Model):
     picture = db.Column(db.String(10), nullable=False)
     isavailable = db.Column(db.Boolean, nullable=False)
     amount = id = db.Column(db.Integer, nullable=False)
+    bank_ad = db.relationship('Ad_bank', backref='ad', lazy=True)
     user_id1 = db.Column(db.Integer, db.ForeignKey('user.id'),
         nullable=False)
     user_id2 = db.Column(db.Integer, db.ForeignKey('user.id'),
@@ -52,10 +53,24 @@ class Ad(db.Model):
             "done": self.done
         } 
 
+class Ad_bank(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ad_id = db.Column(db.Integer, db.ForeignKey('ad.id'),
+    nullable=False)
+    bank_id = db.Column(db.Integer, db.ForeignKey('bank.id'),
+    nullable=False)
+
+    # def serialize(self):
+    #     return {
+    #         "label": self.label,
+    #         "done": self.done
+    #     } 
+
 class Bank(db.Model):
     """ users to do tasks """
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(30), nullable=False)
+    bank_ad = db.relationship('Ad_bank', backref='bank', lazy=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'),
         nullable=False)
 
