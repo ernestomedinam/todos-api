@@ -327,8 +327,6 @@ def handle_user_images(username, id=0):
         headers
     )
 
-# single user image endpoint
-
 # static image file serving
 @app.route("/src/static/images/<filename>", methods=["GET"])
 def serve_image(filename):
