@@ -237,29 +237,44 @@ def handle_user_images(username, id=0):
                 target = os.path.join(UPLOAD_FOLDER, "images")
                 if not os.path.isdir(target):
                     os.mkdir(target)
-                image_file = request.files['file']
-                filename = secure_filename(image_file.filename)
-                extension = filename.rsplit(".", 1)[1]
-                hash_name = uuid.uuid4().hex
-                hashed_filename = ".".join([hash_name, extension])
-                destination = os.path.join(target, hashed_filename)
-                image_file.save(destination)
-                
-                new_image = UserImage(request.form.get("title"), destination, username)
-                db.session.add(new_image)
-                
                 try:
-                    db.session.commit()
-                    response_body = {
-                        "result": "HTTP_201_CREATED. image created for user"
-                    }
-                    status_code = 201
-                except IntegrityError:
-                    db.session.rollback()
-                    response_body = {
-                        "result": "HTTP_400_BAD_REQUEST. image with same title exists"
-                    }
+                    image_file = request.files['file']
+                    filename = secure_filename(image_file.filename)
+                    extension = filename.rsplit(".", 1)[1]
+                    hash_name = uuid.uuid4().hex
+                    hashed_filename = ".".join([hash_name, extension])
+                    destination = os.path.join(target, hashed_filename)
+                    
+                    try:
+                        new_image = UserImage(request.form.get("title"), destination, username)
+                        db.session.add(new_image)
+
+                        try:
+                            db.session.commit()
+                            image_file.save(destination)
+                            response_body = {
+                                "result": "HTTP_201_CREATED. image created for user"
+                            }
+                            status_code = 201
+                        except IntegrityError:
+                            db.session.rollback()
+                            response_body = {
+                                "result": "HTTP_400_BAD_REQUEST. image with same title exists"
+                            }
+                            status_code = 400
+                    except:
+                        db.session.rollback()
+                        status_code = 400
+                        response_body = {
+                            "result": "HTTP_400_BAD_REQUEST. no title in key/value"
+                        }
+                except:
                     status_code = 400
+                    response_body = {
+                        "result": "HTTP_400_BAD_REQUEST. no file or file key found in request."
+                    }
+                
+                
             else:
                 # user has 5 images uploaded
                 response_body = {
