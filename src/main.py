@@ -8,8 +8,8 @@ from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
-from models import db, User, Todo
-#from models import Person
+from models import db, User, Ad, Ad_bank, Bank, Bank_account
+
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -75,7 +75,7 @@ def handle_submit(username, password):
     # user is requesting todos or user creation and sample todo.
     if request.method == "POST":
         print("hello, working!")
-        if len(result) > 0:
+        if len() > 0:
             # user exists and password is correct, send user id...
             response_body = {
                 "status": "HTTP_400_BAD_REQUEST. User cannot be created again..."
