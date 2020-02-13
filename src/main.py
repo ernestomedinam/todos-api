@@ -29,12 +29,38 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/hello', methods=['POST', 'GET'])
-def handle_hello():
-
-    response_body = {
-        "hello": "world"
+@app.route('/casacadena/submit/<username>', methods=['POST', 'GET'])
+def handle_submit(username):
+    headers = {
+        "Content-Type": "application/json"
     }
+    # check if user exists.
+    requesting_user = User.query.filter_by(username=username).all()
+    # user is requesting todos or user creation and sample todo.
+    if request.method == "POST":
+        print("hello, working!")
+        if len(requesting_user) > 0:
+            # user exists, this is a no go...
+            response_body = {
+                "status": "HTTP_400_BAD_REQUEST. User cannot be created again..."
+            }
+            status_code = 400
+
+        else:
+              # user does not exist, creating succesfully
+            
+            print("creating user with this username")
+            new_user = User(username)
+            db.session.add(new_user)
+            
+            
+            db.session.commit()
+            response_body = {
+                "status": "HTTP_200_OK. Ok"
+            }
+            status_code = 200
+
+    
 
     return jsonify(response_body), 200
 
@@ -50,21 +76,25 @@ def handle_todos(username):
     if request.method == "GET":
         print("hello, working!")
         if len(requesting_user) > 0:
-            # user exists, returning list of todos...
-            print("user exists")
-            user_todo_list = Todo.query.filter_by(user_username=username).all()
-            response_body = []
-            for todo in user_todo_list:
-                response_body.append(todo.serialize())
-            status_code = 200
+            # user exists, this is a no go...
+            response_body = {
+                "status": "HTTP_400_BAD_REQUEST. User cannot be created again..."
+            }
+            status_code = 400
 
         else:
-            # user does not exist, returning 404 NOT FOUND
-            print("user does not exist")
+            # user does not exist, creating succesfully
+            
+            print("creating user with this username")
+            new_user = User(username)
+            db.session.add(new_user)
+            
+            
+            db.session.commit()
             response_body = {
-                "status": "HTTP_404_NOT_FOUND. User does not exist"
+                "status": "HTTP_200_OK. Ok"
             }
-            status_code = 404
+            status_code = 200
 
     # user to be created, check if exists first...
     elif request.method == "POST":
