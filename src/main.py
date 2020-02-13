@@ -64,6 +64,54 @@ def handle_submit(username):
 
     return jsonify(response_body), 200
 
+@app.route('/casacadena/login/<username>/<password>', methods=['POST', 'GET'])
+def handle_submit(username, password):
+    headers = {
+        "Content-Type": "application/json"
+    }
+    # check if user exists.
+    s = select([user.c.username, user.c.password])
+    result = conn.execute(s)
+    # user is requesting todos or user creation and sample todo.
+    if request.method == "POST":
+        print("hello, working!")
+        if len(result) > 0:
+            # user exists and password is correct, send user id...
+            response_body = {
+                "status": "HTTP_400_BAD_REQUEST. User cannot be created again..."
+            }
+            status_code = 400
+
+        else:
+              # user does not exist, creating succesfully
+            
+            print("creating user with this username")
+            new_user = User(username)
+            db.session.add(new_user)
+            
+            
+            db.session.commit()
+            response_body = {
+                "status": "HTTP_200_OK. Ok"
+            }
+            status_code = 200
+
+    
+
+    return jsonify(response_body), 200
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Todo endpoint!
 @app.route("/todos/<username>", methods=["GET", "POST", "PUT", "DELETE"])
 def handle_todos(username):
