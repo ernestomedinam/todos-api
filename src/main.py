@@ -29,13 +29,16 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/casacadena/submit/<username>', methods=['POST', 'GET'])
-def handle_submit(username):
+@app.route('/casacadena/submit_register/', methods=['POST', 'GET'])
+def handle_submit():
+    email_from_form = request.form['register_email']
     headers = {
         "Content-Type": "application/json"
     }
     # check if user exists.
-    requesting_user = User.query.filter_by(username=username).all()
+    requesting_user = User.query.filter_by(email=user_email).one_or_none()
+
+            # USER IS AUTH...
     # user is requesting todos or user creation and sample todo.
     if request.method == "POST":
         print("hello, working!")
@@ -64,13 +67,24 @@ def handle_submit(username):
 
     return jsonify(response_body), 200
 
-@app.route('/casacadena/login/<username>/<password>', methods=['POST', 'GET'])
-def handle_submit(username, password):
+@app.route('/casacadena/submit_signin', methods=['POST', 'GET'])
+def handle_submit():
+    email_from_form = request.form['signin_email']
     headers = {
         "Content-Type": "application/json"
     }
     # check if user exists.
-    s = select([user.c.username, user.c.password])
+    requesting_user = User.query.filter_by(email=email_from_form).one_or_none()
+    
+    if requesting_user:
+        password_from_form = request.form['signin_password']
+        if password_from_form == requesting_user.password:
+            response_body = {
+                'username':requesting_user.username,
+                'email':requesting_user.email,
+                'authentic':true
+            }
+
     result = conn.execute(s)
     # user is requesting todos or user creation and sample todo.
     if request.method == "POST":
