@@ -30,15 +30,15 @@ def sitemap():
     return generate_sitemap(app)
 
 @app.route('/casacadena/submit_register/', methods=['POST', 'GET'])
-def handle_submit():
-    email_from_form = request.form['register_email']
+def handle_submit_register():
+    email_from_register_form = request.form['register_email']
+
     headers = {
         "Content-Type": "application/json"
     }
     # check if user exists.
-    requesting_user = User.query.filter_by(email=user_email).one_or_none()
+    requesting_user = User.query.filter_by(email=email_from_register_form).one_or_none()
 
-            # USER IS AUTH...
     # user is requesting todos or user creation and sample todo.
     if request.method == "POST":
         print("hello, working!")
@@ -50,25 +50,23 @@ def handle_submit():
             status_code = 400
 
         else:
-              # user does not exist, creating succesfully
-            
-            print("creating user with this username")
-            new_user = User(username)
-            db.session.add(new_user)
-            
-            
-            db.session.commit()
-            response_body = {
-                "status": "HTTP_200_OK. Ok"
-            }
-            status_code = 200
+            # user does not exist, creating succesfully
+            document_id_from_register_form = request.form['register_document_id']
+            name_from_register_form = request.form['register_name']
+            name2_from_register_form = request.form['register_name2']
+            last_name_from_register_form = request.form['register_last_name']
+            last_name2_from_register_form = request.form['register_last']
+            username_from_register_form = request.form['register_username']
+            password_from_register_form = request.form['register_password']
+            phone_number_from_register_form = request.form['register_phone_number']
+            city_from_register_form = request.form['register_city']
 
-    
 
-    return jsonify(response_body), 200
+
+    return jsonify(response_body), status_code
 
 @app.route('/casacadena/submit_signin', methods=['POST', 'GET'])
-def handle_submit():
+def handle_submit_signin():
     email_from_form = request.form['signin_email']
     headers = {
         "Content-Type": "application/json"
@@ -76,16 +74,19 @@ def handle_submit():
     # check if user exists.
     requesting_user = User.query.filter_by(email=email_from_form).one_or_none()
     
-    if requesting_user:
-        password_from_form = request.form['signin_password']
-        if password_from_form == requesting_user.password:
+    if len(requesting_user) > 0:
+        password_from_signin_form = request.form['signin_password']
+        if password_from_signin_form == requesting_user.password:
             response_body = {
+                'id':requesting_user.id,
                 'username':requesting_user.username,
                 'email':requesting_user.email,
                 'authentic':true
             }
+            status_code = 200
 
-    result = conn.execute(s)
+    return jsonify(response_body), status_code
+
     # user is requesting todos or user creation and sample todo.
     if request.method == "POST":
         print("hello, working!")
