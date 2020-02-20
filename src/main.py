@@ -32,7 +32,10 @@ def sitemap():
 @app.route('/casacadena/submit_register/', methods=['POST', 'GET'])
 def handle_submit_register():
     email_from_register_form = request.form['register_email']
-
+    username_from_register_form = request.form['register_username']
+    cedula_from_register_form = request.form['register_document_id']
+    password_from_register_form = request.form['register_password']
+    city_from_register_form = request.form['register_city']
     headers = {
         "Content-Type": "application/json"
     }
