@@ -64,7 +64,10 @@ def handle_submit_register():
             phone_number_from_register_form = request.form['register_phone_number']
             city_from_register_form = request.form['register_city']
 
-            
+            response_body = {
+                "status": "HTTP_201_OK. Ok"
+            }
+            status_code = 201
 
 
     return jsonify(response_body), status_code
