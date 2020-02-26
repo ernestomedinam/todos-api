@@ -4,7 +4,7 @@ db = SQLAlchemy()
 
 class User(db.Model):
     """ todo list user """
-    id= db.Column(db.Integer, primary_key=True)
+    user_id= db.Column(db.Integer, primary_key=True)
     document_id = db.Column(db.String(30), nullable=False)
     name = db.Column(db.String(30), nullable=False)
     name2 = db.Column(db.String(30), nullable=True)
@@ -26,7 +26,7 @@ class User(db.Model):
 
 class Ad(db.Model):
     """ users to do tasks """
-    id = db.Column(db.Integer, primary_key=True)
+    ad_id = db.Column(db.Integer, primary_key=True)
     label = db.Column(db.String(30), nullable=False)
     buyorsell = db.Column(db.Boolean, nullable=False)
     description = db.Column(db.String(300), nullable=False)
@@ -37,11 +37,11 @@ class Ad(db.Model):
     limit = db.Column(db.Integer, nullable=False)
     picture = db.Column(db.String(10), nullable=False)
     isavailable = db.Column(db.Boolean, nullable=False)
-    amount = id = db.Column(db.Integer, nullable=False)
+    ad_amount = db.Column(db.Integer, nullable=False)
     bank_ad = db.relationship('Ad_bank', backref='ad', lazy=True)
-    user_id1 = db.Column(db.Integer, db.ForeignKey('user.id'),
+    user_id1 = db.Column(db.Integer, db.ForeignKey('user.user_id'),
         nullable=False)
-    user_id2 = db.Column(db.Integer, db.ForeignKey('user.id'),
+    user_id2 = db.Column(db.Integer, db.ForeignKey('user.user_id'),
     nullable=False)
 
     def __init__(self, label, user_username):
@@ -54,11 +54,11 @@ class Ad(db.Model):
             "done": self.done
         } 
 
-class Ad_bank(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    ad_id = db.Column(db.Integer, db.ForeignKey('ad.id'),
+class AdBank(db.Model):
+    adbank_id = db.Column(db.Integer, primary_key=True)
+    ad_id = db.Column(db.Integer, db.ForeignKey('ad.ad_id'),
     nullable=False)
-    bank_id = db.Column(db.Integer, db.ForeignKey('bank.id'),
+    bank_id = db.Column(db.Integer, db.ForeignKey('bank.bank_id'),
     nullable=False)
 
     # def serialize(self):
@@ -69,10 +69,10 @@ class Ad_bank(db.Model):
 
 class Bank(db.Model):
     """ users to do tasks """
-    id = db.Column(db.Integer, primary_key=True)
+    bank_id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(30), nullable=False)
     bank_ad = db.relationship('Ad_bank', backref='bank', lazy=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'),
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'),
         nullable=False)
 
     def __init__(self, label, nombre):
@@ -85,9 +85,9 @@ class Bank(db.Model):
     #         "done": self.done
     #     } 
 
-class Bank_account(db.Model):
+class BankAccount(db.Model):
     """ users to do tasks """
-    id = db.Column(db.Integer, primary_key=True)
+    bankaccount_id = db.Column(db.Integer, primary_key=True)
     account_number = db.Column(db.String(20), nullable=False, default="sample taks")
     name = db.Column(db.Boolean, default=False)
     
