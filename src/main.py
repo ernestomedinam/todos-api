@@ -64,6 +64,15 @@ def handle_submit_register():
             phone_number_from_register_form = request.form['register_phone_number']
             city_from_register_form = request.form['register_city']
 
+
+            print("creating user with this username")
+            new_user = User(username)
+            db.session.add(new_user)
+           
+            
+            
+            db.session.commit()
+
             response_body = {
                 "status": "HTTP_201_OK. Ok"
             }
