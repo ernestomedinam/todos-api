@@ -88,18 +88,23 @@ def handle_submit_signin():
         "Content-Type": "application/json"
     }
     # check if user exists.
-    requesting_user = User.query.filter_by(email=email_from_form).one_or_none()
+    requesting_email = User.query.filter_by(email=email_from_form).one_or_none()
     
-    if len(requesting_user) > 0:
+    if len(requesting_email) > 0:
         password_from_signin_form = request.form['signin_password']
-        if password_from_signin_form == requesting_user.password:
+        if password_from_signin_form == requesting_email.password:
             response_body = {
-                'id':requesting_user.id,
-                'username':requesting_user.username,
-                'email':requesting_user.email,
+                'id':requesting_email.id,
+                'username':requesting_email.username,
+                'email':requesting_email.email,
                 'authentic':true
             }
             status_code = 200
+        else:
+            response_body = {
+                "status": "HTTP_400_BAD_REQUEST. Username and password doesn't match..."
+            }
+            status_code = 400
 
     return jsonify(response_body), status_code
 
