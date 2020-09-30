@@ -12,6 +12,7 @@ from utils import APIException, generate_sitemap
 from models import db, User, Todo, UserImage
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import IntegrityError
+import cloudinary.uploader as uploader
 #from models import Person
 
 app = Flask(__name__, static_folder="static")
@@ -20,6 +21,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER')
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
+app.config.from_mapping(
+    CLOUDINARY_URL=os.environ.get("CLOUDINARY_URL")
+)
+# cloud_config.update = ({
+#     "cloud_name": os.environ.get("CLOUD_NAME"),
+#     "api_key": os.environ.get("API_KEY"),
+#     "api_secret": os.environ.get("API_SECRET")
+# })
 UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER')
 MIGRATE = Migrate(app, db)
 db.init_app(app)
@@ -224,9 +233,7 @@ def handle_user_images(username, id=0):
                     response_body.append(image.serialize())
                 status_code = 200
             else:
-                response_body = {
-                    "result": "HTTP_200_OK. sorry, user has no images"
-                }
+                response_body = []
                 status_code = 200
 
         elif request.method == "POST":
@@ -244,22 +251,22 @@ def handle_user_images(username, id=0):
                     hash_name = uuid.uuid4().hex
                     hashed_filename = ".".join([hash_name, extension])
                     destination = os.path.join(target, hashed_filename)
-                    
+                    response = uploader.upload(image_file)
+                    print(f"{response.items()}")
                     try:
-                        new_image = UserImage(request.form.get("title"), destination, username)
+                        new_image = UserImage(request.form.get("title"), response["public_id"], response["secure_url"], username)
                         db.session.add(new_image)
 
                         try:
                             db.session.commit()
-                            image_file.save(destination)
                             response_body = {
                                 "result": "HTTP_201_CREATED. image created for user"
                             }
                             status_code = 201
-                        except IntegrityError:
+                        except Exception as error:
                             db.session.rollback()
                             response_body = {
-                                "result": "HTTP_400_BAD_REQUEST. image with same title exists"
+                                "result": f"HTTP_400_BAD_REQUEST. {type(error)} {error.args}"
                             }
                             status_code = 400
                     except:
@@ -268,10 +275,10 @@ def handle_user_images(username, id=0):
                         response_body = {
                             "result": "HTTP_400_BAD_REQUEST. no title in key/value"
                         }
-                except:
+                except Exception as error:
                     status_code = 400
                     response_body = {
-                        "result": "HTTP_400_BAD_REQUEST. no file or file key found in request."
+                        "result": f"HTTP_400_BAD_REQUEST. {type(error)} {error.args}"
                     }
                 
                 
@@ -286,28 +293,25 @@ def handle_user_images(username, id=0):
             # user wants to delete a certain image, check id
             if id != 0 and UserImage.query.filter_by(id=id).first():
                 image_to_delete = UserImage.query.filter_by(id=id).first()
-                url_parts = image_to_delete.image_url.rsplit("/", 2)
-                path_filename = "/".join([url_parts[1], url_parts[2]])
-                if os.path.exists(os.path.join(UPLOAD_FOLDER, path_filename)):
-                    os.remove(os.path.join(UPLOAD_FOLDER, path_filename))
+                response = uploader.destroy(image_to_delete.public_id)
+                if "result" in response and response["result"] == "ok":
                     db.session.delete(image_to_delete)
-                    db.session.commit()
-                    response_body = {
-                        "result": "HTTP_204_NO_CONTENT. image deleted."
-                    }
-                    status_code = 204
+                    try:
+                        db.session.commit()
+                        response_body = {
+                            "result": "HTTP_204_NO_CONTENT. image deleted."
+                        }
+                        status_code = 204
+                    except Exception as error:
+                        db.session.rollback()
+                        response_body = {
+                            "result": f"HTTP_500_INTERNAL_SERVER_ERROR. {type(error)} {error.args}"
+                        }
                 else:
                     response_body = {
-                        "result": "something is very wrong because object with given id exists, but file does not..."
+                        "result": f"HTTP_404_NOT_FOUND. {response['result'] if 'result' in response else 'image not found...'}"
                     }
-                    status_code = 418
-            else:
-                # image does not exist
-                response_body = {
-                    "result": "HTTP_404_NOT_FOUND. image not found..."
-                }
-                status_code = 404
-
+                    status_code = 404
         else:
             # bad request method...
             response_body = {
