@@ -241,16 +241,16 @@ def handle_user_images(username, id=0):
             if len(UserImage.query.filter_by(user_username=username).all()) < 5:
                 # receive file, secure its name, save it and
                 # create object to store title and image_url
-                target = os.path.join(UPLOAD_FOLDER, "images")
-                if not os.path.isdir(target):
-                    os.mkdir(target)
+                # target = os.path.join(UPLOAD_FOLDER, "images")
+                # if not os.path.isdir(target):
+                #     os.mkdir(target)
                 try:
                     image_file = request.files['file']
-                    filename = secure_filename(image_file.filename)
-                    extension = filename.rsplit(".", 1)[1]
-                    hash_name = uuid.uuid4().hex
-                    hashed_filename = ".".join([hash_name, extension])
-                    destination = os.path.join(target, hashed_filename)
+                    # filename = secure_filename(image_file.filename)
+                    # extension = filename.rsplit(".", 1)[1]
+                    # hash_name = uuid.uuid4().hex
+                    # hashed_filename = ".".join([hash_name, extension])
+                    # destination = os.path.join(target, hashed_filename)
                     response = uploader.upload(image_file)
                     print(f"{response.items()}")
                     try:
@@ -332,16 +332,16 @@ def handle_user_images(username, id=0):
     )
 
 # static image file serving
-@app.route("/src/static/images/<filename>", methods=["GET"])
-def serve_image(filename):
+# @app.route("/src/static/images/<filename>", methods=["GET"])
+# def serve_image(filename):
     
-    secured_filename = secure_filename(filename)
-    image_path = os.path.join("images", secured_filename)
+#     secured_filename = secure_filename(filename)
+# rimage_path  h =mage_path = os.path.join("images", secured_filename)
     
-    if os.path.exists(os.path.join(app.static_folder, image_path)):
-        return send_from_directory(app.static_folder, image_path)
-    else:
-        return "HTTP_404_NOT_FOUND"
+#     if os.path.exists(os.path.join(app.static_folder, image_path)):
+#         return send_from_directory(app.static_folder, image_path)
+#     else:
+#         return "HTTP_404_NOT_FOUND"
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
